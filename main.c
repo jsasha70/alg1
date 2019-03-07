@@ -1,8 +1,26 @@
-﻿// Янович Александр
-// дз 2
+﻿/*
+
+Янович Александр
+дз 3
+
+1. Попробовать оптимизировать пузырьковую сортировку. Сравнить количество операций сравнения
+оптимизированной и не оптимизированной программы. Написать функции сортировки,
+которые возвращают количество операций.
+
+2. *Реализовать шейкерную сортировку.
+
+3. Реализовать бинарный алгоритм поиска в виде функции, которой передается отсортированный массив.
+Функция возвращает индекс найденного элемента или -1, если элемент не найден.
+
+4. (не сделал - не хватило времени) *Подсчитать количество операций для каждой из сортировок и сравнить его
+с асимптотической сложностью алгоритма.
+
+*/
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <time.h>
 
 typedef unsigned long long ull;
 double enterDouble(char *text);
@@ -10,180 +28,206 @@ int enterInt(char *text);
 void enterString100(char *text, char s[101]);
 static int steps;
 
-ull parceDec(ull add, char* str) {
-    // парсинг записи десятичного числа (проверка на посторонние символы типа минуса не производится)
-    steps++;
-    return *str == 0 ? add : parceDec(add*10 + ((unsigned char)(*str) - '0'), str + 1);
+void randIntArray1000(int size, int *a) {
+    // заполнение массива случайными числами от 0 до 1000
+    for(int i=0; i<size; i++)
+        a[i] = rand()%1001;
 }
 
-char* getBin(ull num, char* str) {
-    // получение записи в двоичном виде
-    steps++;
-    char* s = num > 1 ? getBin(num >> 1, str) : str;
-    *s = '0' + (char)(num & 1);
-    return ++s;
+void swap(int *a, int *b) {
+    int t = *a;
+    *a = *b;
+    *b = t;
 }
 
-void task1() {
-    // Реализовать функцию перевода из 10 системы в двоичную используя рекурсию.
-    char d[101];
-    enterString100("enter decimal number", d);
+int sortPuzyrOrig(int size, int *a) {
+    // исходный алгоритм пузырьковой сортировки
+    int steps1 = steps;
 
-    // парсинг записи десятичного числа (проверка на посторонние символы типа минуса не производится)
-    ull num = parceDec(0, d);
-    printf("got: %lld\n", num);
-
-    // получение записи в двоичном виде
-    char bin[101];
-    *getBin(num, bin) = 0; // после числа записываем признак конца строки
-    printf("binary representation: %s\n", bin);
-}
-
-void task2a() {
-    // Реализовать функцию возведения числа a в степень b: без рекурсии
-    double a, res=1;
-    int b;
-    printf("enter A and B (separated by space): ");
-    scanf("%lf %d", &a, &b);
-
-    if(b > 0) {
-        for(int i=0; i < b; i++) {
+    int i, j;
+    for(i = 0; i < size; i++) {
+        for(j = 0; j < size - 1; j ++) {
             steps++;
-            res *= a;
-        }
-    } else if(b < 0) {
-        for(int i=0; i < -b; i++) {
-            steps++;
-            res /= a;
-        }
-    } else if(a > -0.0000001 && a < 0.0000001) {
-        printf("undetermined result: 0^0\n");
-        return;
-    }
-
-    printf("%lf^%d = %lf\n", a, b, res);
-}
-
-double powerRec(double a, int b) {
-    steps++;
-    if(b == 0) {
-        return 1;
-    } else if (b > 0) {
-        return a * powerRec(a, b-1);
-    } else { // b < 0
-        return powerRec(a, b+1) / a;
-    }
-}
-
-void task2b() {
-    // Реализовать функцию возведения числа a в степень b: рекурсивно
-    double a;
-    int b;
-    printf("enter A and B (separated by space): ");
-    scanf("%lf %d", &a, &b);
-    if(b == 0 && a > -0.0000001 && a < 0.0000001) {
-        printf("undetermined result: 0^0\n");
-        return;
-    } else {
-        printf("%lf^%d = %lf\n", a, b, powerRec(a, b));
-    }
-}
-
-double powerRec2(double a, int b) {
-    steps++;
-    if(b == 0) {
-        return 1;
-    } else if (b > 0) {
-        if(b%2 == 0) {
-            double a2 = powerRec2(a, b/2);
-            return a2 * a2;
-        } else {
-            return a * powerRec2(a, b-1);
-        }
-    } else { // b < 0
-        if((-b)%2 == 0) {
-            double a2 = powerRec2(a, b/2);
-            return 1 / (a2 * a2);
-        } else {
-            return powerRec2(a, b+1) / a;
-        }
-    }
-}
-
-void task2c() {
-    // Реализовать функцию возведения числа a в степень b: *рекурсивно, используя свойство чётности степени
-    double a;
-    int b;
-    printf("enter A and B (separated by space): ");
-    scanf("%lf %d", &a, &b);
-    if(b == 0 && a > -0.0000001 && a < 0.0000001) {
-        printf("undetermined result: 0^0\n");
-        return;
-    } else {
-        printf("%lf^%d = %lf\n", a, b, powerRec2(a, b));
-    }
-}
-
-#define NN1 3
-#define NN2 20
-
-void task3a() {
-    // Исполнитель Калькулятор ... Сколько существует программ, которые число 3 преобразуют в число 20: с использованием массива
-    int progCount[NN2 + 1];
-    memset(progCount, 0, sizeof (progCount));
-    progCount[NN1] = 1;
-
-    int i1;
-    for(int i=NN1+1; i<=NN2; i++) {
-        steps++;
-
-        i1 = i - 1;
-        if(i1 >= NN1) {
-            progCount[i] += progCount[i1];
-        }
-
-        if(i%2 == 0) {
-            i1 = i / 2;
-            if(i1 >= NN1) {
-                progCount[i] += progCount[i1];
+            if (a[j ] > a[j + 1] ) {
+                swap(&a[j ], &a[j + 1] );
             }
         }
     }
 
-    printf("prog count: %d\n", progCount[NN2]);
+    return steps - steps1;
 }
 
-int progCountRec(int n1, int n2) {
-    steps++;
+int sortPuzyrOptim(int size, int *a) {
+    // оптимизированный алгоритм пузырьковой сортировки
+    int steps1 = steps;
 
-    if(n2 == n1)
-        return 1;
+    int i, j, done;
+    for(i = 0; i < size; i++) {
+        done = 1;
+        for(j = 0; j < size - i - 1; j ++) { // !!! тут главная оптимизация (не проверяем последние числа - они уже на месте) !!!
+            steps++;
+            if (a[j ] > a[j + 1] ) {
+                swap(&a[j ], &a[j + 1] );
+                done = 0;
+            }
+        }
 
-    int ret = 0;
-
-    int n = n2 - 1;
-    if(n >= n1)
-        ret += progCountRec(n1, n);
-
-    if(n2%2 == 0) {
-        n = n2 / 2;
-        if(n >= n1)
-            ret += progCountRec(n1, n);
+        if(done)
+            break;
     }
 
-    return ret;
+    return steps - steps1;
 }
 
-void task3b() {
-    // Исполнитель Калькулятор ... Сколько существует программ, которые число 3 преобразуют в число 20: с использованием рекурсии
-    printf("prog count: %d\n", progCountRec(NN1, NN2));
+void printArray(char *text, int size, int *a) {
+    if(*text != 0)
+        printf("%s\n", text);
+    for(int i=0; i<size; i++)
+        printf("%d ", a[i]);
+    printf("\n");
 }
+
+void task1() {
+    // 1. Попробовать оптимизировать пузырьковую сортировку. Сравнить количество операций сравнения
+    // оптимизированной и не оптимизированной программы. Написать функции сортировки,
+    // которые возвращают количество операций.
+
+    srand((unsigned int)time(NULL));
+
+    int size = enterInt("enter size of array");
+    int rpt = enterInt("enter repeat count");
+    if(size<2 || rpt<1) {
+        printf("invalid params\n");
+        return;
+    }
+
+    int *a = calloc((ull)size, sizeof (int));
+    int *a1 = calloc((ull)size, sizeof (int));
+    int n1, n2;
+
+    for(int i=0; i<rpt; i++) {
+        randIntArray1000(size, a);
+        if(rpt == 1) printArray("orig:", size, a);
+
+        memcpy(a1, a, sizeof (int) * (ull)size);
+        n1 = sortPuzyrOrig(size, a1);
+        if(rpt == 1) printArray("sorted:", size, a1);
+
+        memcpy(a1, a, sizeof (int) * (ull)size);
+        n2 = sortPuzyrOptim(size, a1);
+        if(rpt == 1) printArray("", size, a1);
+
+        if(i == 0) printf("stats:\n");
+        printf("%5d %5d\n", n1, n2);
+    }
+}
+
+int sortShaker(int size, int *a) {
+    // алгоритм шейкерной сортировки
+    int steps1 = steps;
+
+    int i, j, done;
+    int nn = size/2 + size%2; // число проходов
+    for(i = 0; i < nn; i++) {
+        done = 1;
+        for(j = i; j < size - i - 1; j ++) {
+            steps++;
+            if (a[j ] > a[j + 1] ) {
+                swap(&a[j ], &a[j + 1] );
+                done = 0;
+            }
+        }
+        if(done) break;
+
+        for(j = size - i - 1; j > i; j --) {
+            steps++;
+            if (a[j ] < a[j - 1] ) {
+                swap(&a[j ], &a[j - 1] );
+                done = 0;
+            }
+        }
+        if(done) break;
+    }
+
+    return steps - steps1;
+}
+
+void task2() {
+    // 2. *Реализовать шейкерную сортировку.
+
+    srand((unsigned int)time(NULL));
+
+    int size = enterInt("enter size of array");
+    if(size < 2) {
+        printf("invalid params\n");
+        return;
+    }
+
+    int *a = calloc((ull)size, sizeof (int));
+    randIntArray1000(size, a);
+    printArray("orig:", size, a);
+
+    sortShaker(size, a);
+    printArray("sorted:", size, a);
+}
+
+int searchBin(int size, int *a, int val) {
+    int n1 = 0;
+    int n2 = size - 1;
+    int n = (n1 + n2) / 2;
+    int val1;
+
+    while (n2 > n1) {
+        steps++;
+//        printf("n1=%d; n=%d; n2=%d\n", n1, n, n2);
+        val1 = a[n];
+        if(val1 == val)
+            break;
+        else if(val1 < val)
+            n1 = n + 1;
+        else
+            n2 = n - 1;
+        n = (n1 + n2) / 2;
+    }
+
+    return a[n] == val ? n : -1;
+}
+
+void task3() {
+    // 3. Реализовать бинарный алгоритм поиска в виде функции, которой передается отсортированный массив.
+    // Функция возвращает индекс найденного элемента или -1, если элемент не найден.
+
+    srand((unsigned int)time(NULL));
+
+    int size = enterInt("enter size of array");
+    if(size < 2) {
+        printf("invalid params\n");
+        return;
+    }
+
+    int *a = calloc((ull)size, sizeof (int));
+    randIntArray1000(size, a);
+    sortShaker(size, a);
+    printArray("sorted array:", size, a);
+    steps = 0;
+
+    int val, steps1, idx;
+    while(1) {
+        val = enterInt("\nenter value for search (-1 - exit)");
+        if(val == -1) break;
+
+        steps1 = steps;
+        idx = searchBin(size, a, val);
+        printf("found index: %d\nsteps: %d\n", idx, steps - steps1);
+    }
+}
+
 
 typedef void (*TaskFunc)(void);
 
 int main() {
-    TaskFunc tasks[] = {task1, task2a, task2b, task2c, task3a, task3b};
-    char* taskNames[] = {"1", "2a", "2b", "2c", "3a", "3b"};
+    TaskFunc tasks[] = {task1, task2, task3};
+    char* taskNames[] = {"1", "2", "3"};
     int taskCount = (int)(sizeof(tasks)/sizeof(TaskFunc));
     int taskCount2 = (int)(sizeof(taskNames)/sizeof(char*));
 
