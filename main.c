@@ -257,12 +257,103 @@ void task3() {
     }
 }
 
+int nextStepV(int x, int y, uc count, boardDescription *b) {
+    int lastStep = 0;
+    if(count == b->boardSize - 1) lastStep = 1;
+
+    if(count >= b->boardSize)
+        return 1;
+
+    count++;
+    int x1, y1, x2, y2;
+
+    // для каждого допустимого поля определяем число допустимых ходов (0 - ход недопустимый)
+    int ss[8];
+    for(int i=0; i < 8; i++) {
+        ss[i] = 0;
+        x1 = x + dx[i];
+        y1 = y + dy[i];
+        if(isFreeCell(x1, y1, b)) {
+            for(int j=0; j < 8; j++) {
+                x2 = x1 + dx[j];
+                y2 = y1 + dy[j];
+                if(isFreeCell(x2, y2, b))
+                    ss[i]++;
+            }
+            if(ss[i] == 0 && lastStep) // на последнем ходе следующего хода быть не может
+                ss[i] = 1;
+        }
+    }
+
+    // находим минимум допустимых ходов
+    int minSteps = 0;
+    for(int i=0; i < 8; i++) {
+        if(minSteps == 0 || (ss[i] > 0 && minSteps > ss[i]))
+            minSteps = ss[i];
+    }
+
+    if(minSteps == 0)
+        return 0;
+
+    for(int i=0; i < 8; i++) {
+        if(ss[i] == minSteps) {
+            x1 = x + dx[i];
+            y1 = y + dy[i];
+            *getCellAddr(x1, y1, b) = count;
+            if(nextStepV(x1, y1, count, b)) return 1;
+            *getCellAddr(x1, y1, b) = 0;
+        }
+    }
+    return 0;
+}
+
+int firstStepV(boardDescription *b) {
+    for(int y=0; y < b->height; y++) {
+        for(int x=0; x < b->width; x++) {
+            *getCellAddr(x, y, b) = 1;
+            if(nextStepV(x, y, 1, b)) return 1;
+            *getCellAddr(x, y, b) = 0;
+        }
+    }
+    return 0;
+}
+
+void task3v() {
+    // Правило Варнсдорфа:
+    // При обходе доски конь следует на то поле, с которого можно пойти
+    // на минимальное число ещё не пройденных полей.
+    // Если таких полей несколько, то можно пойти на любое из них.
+
+    boardDescription b;
+
+    enterInt2("enter board size (width space height)", &b.width, &b.height);
+    if(b.width<3 || b.height<3 || b.width*b.height>255) {
+        printf("invalid params\n");
+        return;
+    }
+
+    b.boardSize = b.width * b.height;
+    b.board = calloc((ull)b.boardSize, sizeof(uc));
+
+    int ret = firstStepV(&b);
+    if(ret) {
+        for(int y=0; y < b.height; y++) {
+            for(int x=0; x < b.width; x++) {
+                printf("%3d ", b.board[x + y*b.width]);
+            }
+            printf("\n");
+        }
+    } else {
+        printf("solution not found\n");
+    }
+}
+
 
 typedef void (*TaskFunc)(void);
 
 int main() {
-    TaskFunc tasks[] = {task1, task2, task3};
-    char* taskNames[] = {"1", "2", "3"};
+    TaskFunc tasks[] = {task1, task2, task3, task3v};
+    char* taskNames[] = {"1", "2", "3", "3v"};
     int taskCount = (int)(sizeof(tasks)/sizeof(TaskFunc));
     int taskCount2 = (int)(sizeof(taskNames)/sizeof(char*));
 
