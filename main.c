@@ -1,19 +1,21 @@
 ﻿/*
 
 Янович Александр
-дз 3
+дз 4
 
-1. Попробовать оптимизировать пузырьковую сортировку. Сравнить количество операций сравнения
-оптимизированной и не оптимизированной программы. Написать функции сортировки,
-которые возвращают количество операций.
+1. *Количество маршрутов с препятствиями. Реализовать чтение массива с препятствием
+и нахождение количество маршрутов.
+Например, карта:
+3 3
+1 1 1
+0 1 0
+0 1 0
 
-2. *Реализовать шейкерную сортировку.
+2. Решить задачу о нахождении длины максимальной последовательности с помощью матрицы.
 
-3. Реализовать бинарный алгоритм поиска в виде функции, которой передается отсортированный массив.
-Функция возвращает индекс найденного элемента или -1, если элемент не найден.
-
-4. (не сделал - не хватило времени) *Подсчитать количество операций для каждой из сортировок и сравнить его
-с асимптотической сложностью алгоритма.
+3. ***Требуется обойти конём шахматную доску размером NxM, пройдя через все поля доски
+по одному разу. Здесь алгоритм решения такой же как и в задаче о 8 ферзях.
+Разница только в проверке положения коня.
 
 */
 
@@ -23,202 +25,326 @@
 #include <time.h>
 
 typedef unsigned long long ull;
+typedef unsigned char uc;
 double enterDouble(char *text);
 int enterInt(char *text);
-void enterString100(char *text, char s[101]);
+void enterInt2(char *text, int *n, int *m);
+void enterString(char *text, char *s, int maxLen);
 static int steps;
 
-void randIntArray1000(int size, int *a) {
-    // заполнение массива случайными числами от 0 до 1000
-    for(int i=0; i<size; i++)
-        a[i] = rand()%1001;
-}
-
-void swap(int *a, int *b) {
-    int t = *a;
-    *a = *b;
-    *b = t;
-}
-
-int sortPuzyrOrig(int size, int *a) {
-    // исходный алгоритм пузырьковой сортировки
-    int steps1 = steps;
-
-    int i, j;
-    for(i = 0; i < size; i++) {
-        for(j = 0; j < size - 1; j ++) {
-            steps++;
-            if (a[j ] > a[j + 1] ) {
-                swap(&a[j ], &a[j + 1] );
-            }
-        }
-    }
-
-    return steps - steps1;
-}
-
-int sortPuzyrOptim(int size, int *a) {
-    // оптимизированный алгоритм пузырьковой сортировки
-    int steps1 = steps;
-
-    int i, j, done;
-    for(i = 0; i < size; i++) {
-        done = 1;
-        for(j = 0; j < size - i - 1; j ++) { // !!! тут главная оптимизация (не проверяем последние числа - они уже на месте) !!!
-            steps++;
-            if (a[j ] > a[j + 1] ) {
-                swap(&a[j ], &a[j + 1] );
-                done = 0;
-            }
-        }
-
-        if(done)
-            break;
-    }
-
-    return steps - steps1;
-}
-
-void printArray(char *text, int size, int *a) {
-    if(*text != 0)
-        printf("%s\n", text);
-    for(int i=0; i<size; i++)
-        printf("%d ", a[i]);
-    printf("\n");
-}
-
 void task1() {
-    // 1. Попробовать оптимизировать пузырьковую сортировку. Сравнить количество операций сравнения
-    // оптимизированной и не оптимизированной программы. Написать функции сортировки,
-    // которые возвращают количество операций.
+    // 1. *Количество маршрутов с препятствиями. Реализовать чтение массива с препятствием
+    // и нахождение количество маршрутов.
+    // Например, карта:
+    // 3 3
+    // 1 1 1
+    // 0 1 0
+    // 0 1 0
 
-    srand((unsigned int)time(NULL));
-
-    int size = enterInt("enter size of array");
-    int rpt = enterInt("enter repeat count");
-    if(size<2 || rpt<1) {
+    int n, m;
+    char lin[256];
+    enterInt2("enter length of line and number of lines", &n, &m);
+    if(n<2 || m<2 || n>255) {
         printf("invalid params\n");
         return;
     }
+    printf("format of a line: 1-s and 0-s without space; for example 11101\n");
 
-    int *a = calloc((ull)size, sizeof (int));
-    int *a1 = calloc((ull)size, sizeof (int));
-    int n1, n2;
+    int *map = calloc((ull)(n * m), sizeof(int));
 
-    for(int i=0; i<rpt; i++) {
-        randIntArray1000(size, a);
-        if(rpt == 1) printArray("orig:", size, a);
-
-        memcpy(a1, a, sizeof (int) * (ull)size);
-        n1 = sortPuzyrOrig(size, a1);
-        if(rpt == 1) printArray("sorted:", size, a1);
-
-        memcpy(a1, a, sizeof (int) * (ull)size);
-        n2 = sortPuzyrOptim(size, a1);
-        if(rpt == 1) printArray("", size, a1);
-
-        if(i == 0) printf("stats:\n");
-        printf("%5d %5d\n", n1, n2);
-    }
-}
-
-int sortShaker(int size, int *a) {
-    // алгоритм шейкерной сортировки
-    int steps1 = steps;
-
-    int i, j, done;
-    int nn = size/2 + size%2; // число проходов
-    for(i = 0; i < nn; i++) {
-        done = 1;
-        for(j = i; j < size - i - 1; j ++) {
-            steps++;
-            if (a[j ] > a[j + 1] ) {
-                swap(&a[j ], &a[j + 1] );
-                done = 0;
+    for(int i = 0; i < m; i++) {
+        printf("enter line %d: ", i+1);
+        scanf("%255s", lin);
+        if(strlen(lin) != (ull)n) {
+            printf("line length must be %d\n", n);
+            return;
+        }
+        for(int j = 0; j < n; j++) {
+            switch(lin[j]) {
+            case '0':
+                break;
+            case '1':
+                map[i * n + j] = 1;
+                break;
+            default:
+                printf("invalid symbol (not 1 or 0)\n");
+                return;
             }
         }
-        if(done) break;
-
-        for(j = size - i - 1; j > i; j --) {
-            steps++;
-            if (a[j ] < a[j - 1] ) {
-                swap(&a[j ], &a[j - 1] );
-                done = 0;
-            }
-        }
-        if(done) break;
     }
 
-    return steps - steps1;
+    // вычисления делаем прямо в массиве map
+
+    // сначала в первой строке и первом столбце обнуляем элементы после первого нуля
+    int founZero = 0;
+    for(int i = 0; i < m; i++) {
+        steps++;
+        if(founZero)
+            map[i*n] = 0;
+        else if(map[i*n] == 0)
+            founZero = 1;
+    }
+    for(int j = 0; j < n; j++) {
+        steps++;
+        if(founZero)
+            map[j] = 0;
+        else if(map[j] == 0)
+            founZero = 1;
+    }
+
+    // затем проходим последовательно остальные элементы
+    for(int i = 1; i < m; i++) {
+        for(int j = 1; j < n; j++) {
+            steps++;
+            if(map[i*n + j])
+                map[i*n + j] = map[(i-1)*n + j] + map[i*n + (j-1)];
+        }
+    }
+
+    // выводим результат
+    for(int i = 0; i < m; i++) {
+        for(int j = 0; j < n; j++) {
+            printf("%3d ", map[i*n + j]);
+        }
+        printf("\n");
+    }
 }
 
 void task2() {
-    // 2. *Реализовать шейкерную сортировку.
+    // 2. Решить задачу о нахождении длины максимальной последовательности с помощью матрицы.
 
-    srand((unsigned int)time(NULL));
+    char s1[256], s2[256];
+    enterString("enter sequence 1 (chars)", s1, 255);
+    enterString("enter sequence 2 (chars)", s2, 255);
 
-    int size = enterInt("enter size of array");
-    if(size < 2) {
-        printf("invalid params\n");
-        return;
+    int n = (int)strlen(s1);
+    int m = (int)strlen(s2);
+    int nn = n + 1;
+    int mm = m + 1;
+    int *tab = calloc((ull)(nn*mm), sizeof(int));
+    int ii, jj, len1, len2;
+
+    for(int i = 0; i < m; i++) {
+        ii = i + 1;
+        for(int j = 0; j < n; j++) {
+            steps++;
+            jj = j + 1;
+            if(s2[i] == s1[j]) {
+                tab[ii*nn + jj] = tab[(ii-1)*nn + (jj-1)] + 1;
+            } else {
+                len1 = tab[ii*nn + (jj-1)];
+                len2 = tab[(ii-1)*nn + jj];
+                tab[ii*nn + jj] = len1 > len2 ? len1 : len2;
+            }
+        }
     }
 
-    int *a = calloc((ull)size, sizeof (int));
-    randIntArray1000(size, a);
-    printArray("orig:", size, a);
+    printf("\n      ");
+    for(int i = 0; i < n; i++)
+        printf("%1c  ", s1[i]);
+    printf("\n");
+    for(int i = 0; i < mm; i++) {
+        if(i == 0)
+            printf("  ");
+        else
+            printf("%1c ", s2[i-1]);
 
-    sortShaker(size, a);
-    printArray("sorted:", size, a);
+        for(int j = 0; j < nn; j++)
+            printf("%2d ", tab[i*nn + j]);
+        printf("\n");
+    }
+
+    // получаем саму последовательность
+    ii = mm - 1;
+    jj = nn - 1;
+    int idx = tab[ii*nn + jj];
+    char ss[256];
+    memset(ss, 0, 256);
+    while(ii>0 && jj>0 && idx>0) {
+        steps++;
+        if(s1[jj-1] == s2[ii-1]) {
+            ss[--idx] = s1[jj-1];
+            ii--;
+            jj--;
+        } else {
+            if(tab[(ii-1)*nn + jj] > tab[ii*nn + (jj-1)])
+                ii--;
+            else
+                jj--;
+        }
+    }
+
+    printf("\nthe subsequence: \"%s\"\n", ss);
 }
 
-int searchBin(int size, int *a, int val) {
-    int n1 = 0;
-    int n2 = size - 1;
-    int n = (n1 + n2) / 2;
-    int val1;
+typedef struct {
+    int width, height, boardSize, tmp;
+    uc *board;
+} boardDescription;
 
-    while (n2 > n1) {
-        steps++;
-//        printf("n1=%d; n=%d; n2=%d\n", n1, n, n2);
-        val1 = a[n];
-        if(val1 == val)
-            break;
-        else if(val1 < val)
-            n1 = n + 1;
-        else
-            n2 = n - 1;
-        n = (n1 + n2) / 2;
+static const int dx[8] = {-2, -1, 1, 2, 2, 1, -1, -2}; // для перебора возможных ходов
+static const int dy[8] = {1, 2, 2, 1, -1, -2, -2, -1};
+
+static inline uc getCell(int x, int y, boardDescription *b) {
+    steps++;
+    return b->board[x + y*b->width];
+}
+
+static inline uc* getCellAddr(int x, int y, boardDescription *b) {
+    steps++;
+    return b->board + x + y*b->width;
+}
+
+static inline int isFreeCell(int x, int y, boardDescription *b) {
+    return x<0 || x>=b->width || y<0 || y>=b->height ? 0 : (getCell(x, y, b) == 0);
+}
+
+int nextStep(int x, int y, uc count, boardDescription *b) {
+    if(count >= b->boardSize)
+        return 1;
+    count++;
+
+    int x1, y1;
+    for(int i=0; i < 8; i++) {
+        x1 = x + dx[i];
+        y1 = y + dy[i];
+        if(isFreeCell(x1, y1, b)) {
+            *getCellAddr(x1, y1, b) = count;
+            if(nextStep(x1, y1, count, b)) return 1;
+            *getCellAddr(x1, y1, b) = 0;
+        }
     }
+    return 0;
+}
 
-    return a[n] == val ? n : -1;
+int firstStep(boardDescription *b) {
+    for(int y=0; y < b->height; y++) {
+        for(int x=0; x < b->width; x++) {
+            *getCellAddr(x, y, b) = 1;
+            if(nextStep(x, y, 1, b)) return 1;
+            *getCellAddr(x, y, b) = 0;
+        }
+    }
+    return 0;
 }
 
 void task3() {
-    // 3. Реализовать бинарный алгоритм поиска в виде функции, которой передается отсортированный массив.
-    // Функция возвращает индекс найденного элемента или -1, если элемент не найден.
+    // 3. ***Требуется обойти конём шахматную доску размером NxM, пройдя через все поля доски
+    // по одному разу. Здесь алгоритм решения такой же как и в задаче о 8 ферзях.
+    // Разница только в проверке положения коня.
 
-    srand((unsigned int)time(NULL));
+    boardDescription b;
 
-    int size = enterInt("enter size of array");
-    if(size < 2) {
+    enterInt2("enter board size (width space height)", &b.width, &b.height);
+    if(b.width<3 || b.height<3 || b.width*b.height>255) {
         printf("invalid params\n");
         return;
     }
 
-    int *a = calloc((ull)size, sizeof (int));
-    randIntArray1000(size, a);
-    sortShaker(size, a);
-    printArray("sorted array:", size, a);
-    steps = 0;
+    b.boardSize = b.width * b.height;
+    b.board = calloc((ull)b.boardSize, sizeof(uc));
 
-    int val, steps1, idx;
-    while(1) {
-        val = enterInt("\nenter value for search (-1 - exit)");
-        if(val == -1) break;
+    int ret = firstStep(&b);
+    if(ret) {
+        for(int y=0; y < b.height; y++) {
+            for(int x=0; x < b.width; x++) {
+                printf("%3d ", b.board[x + y*b.width]);
+            }
+            printf("\n");
+        }
+    } else {
+        printf("solution not found\n");
+    }
+}
 
-        steps1 = steps;
-        idx = searchBin(size, a, val);
-        printf("found index: %d\nsteps: %d\n", idx, steps - steps1);
+int nextStepV(int x, int y, uc count, boardDescription *b) {
+    int lastStep = 0;
+    if(count == b->boardSize - 1) lastStep = 1;
+
+    if(count >= b->boardSize)
+        return 1;
+
+    count++;
+    int x1, y1, x2, y2;
+
+    // для каждого допустимого поля определяем число допустимых ходов (0 - ход недопустимый)
+    int ss[8];
+    for(int i=0; i < 8; i++) {
+        ss[i] = 0;
+        x1 = x + dx[i];
+        y1 = y + dy[i];
+        if(isFreeCell(x1, y1, b)) {
+            for(int j=0; j < 8; j++) {
+                x2 = x1 + dx[j];
+                y2 = y1 + dy[j];
+                if(isFreeCell(x2, y2, b))
+                    ss[i]++;
+            }
+            if(ss[i] == 0 && lastStep) // на последнем ходе следующего хода быть не может
+                ss[i] = 1;
+        }
+    }
+
+    // находим минимум допустимых ходов
+    int minSteps = 0;
+    for(int i=0; i < 8; i++) {
+        if(minSteps == 0 || (ss[i] > 0 && minSteps > ss[i]))
+            minSteps = ss[i];
+    }
+
+    if(minSteps == 0)
+        return 0;
+
+    for(int i=0; i < 8; i++) {
+        if(ss[i] == minSteps) {
+            x1 = x + dx[i];
+            y1 = y + dy[i];
+            *getCellAddr(x1, y1, b) = count;
+            if(nextStepV(x1, y1, count, b)) return 1;
+            *getCellAddr(x1, y1, b) = 0;
+        }
+    }
+    return 0;
+}
+
+int firstStepV(boardDescription *b) {
+    for(int y=0; y < b->height; y++) {
+        for(int x=0; x < b->width; x++) {
+            *getCellAddr(x, y, b) = 1;
+            if(nextStepV(x, y, 1, b)) return 1;
+            *getCellAddr(x, y, b) = 0;
+        }
+    }
+    return 0;
+}
+
+void task3v() {
+    // Правило Варнсдорфа:
+    // При обходе доски конь следует на то поле, с которого можно пойти
+    // на минимальное число ещё не пройденных полей.
+    // Если таких полей несколько, то можно пойти на любое из них.
+
+    boardDescription b;
+
+    enterInt2("enter board size (width space height)", &b.width, &b.height);
+    if(b.width<3 || b.height<3 || b.width*b.height>255) {
+        printf("invalid params\n");
+        return;
+    }
+
+    b.boardSize = b.width * b.height;
+    b.board = calloc((ull)b.boardSize, sizeof(uc));
+
+    int ret = firstStepV(&b);
+    if(ret) {
+        for(int y=0; y < b.height; y++) {
+            for(int x=0; x < b.width; x++) {
+                printf("%3d ", b.board[x + y*b.width]);
+            }
+            printf("\n");
+        }
+    } else {
+        printf("solution not found\n");
     }
 }
 
@@ -226,8 +352,8 @@ void task3() {
 typedef void (*TaskFunc)(void);
 
 int main() {
-    TaskFunc tasks[] = {task1, task2, task3};
-    char* taskNames[] = {"1", "2", "3"};
+    TaskFunc tasks[] = {task1, task2, task3, task3v};
+    char* taskNames[] = {"1", "2", "3", "3v"};
     int taskCount = (int)(sizeof(tasks)/sizeof(TaskFunc));
     int taskCount2 = (int)(sizeof(taskNames)/sizeof(char*));
 
@@ -282,7 +408,24 @@ int enterInt(char *text) {
     return ret;
 }
 
-void enterString100(char *text, char s[101]) {
+void enterInt2(char *text, int *n, int *m) {
     printf("%s: ", text);
-    scanf("%100s", s);
+    scanf("%d %d", n, m);
+}
+
+void enterString(char *text, char *s, int maxLen) {
+    if(text != NULL) printf("%s: ", text);
+
+    int i = 0;
+    char c;
+    while(1) {
+        scanf("%c", &c);
+        if(c=='\n') {
+            if(i>0) break;
+            else continue;
+        }
+        s[i++] = c;
+        if(i >= maxLen) break;
+    }
+    s[i] = 0;
 }
