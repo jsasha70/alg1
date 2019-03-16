@@ -1,10 +1,22 @@
 ﻿/*
 
 Янович Александр
-дз 4
+дз 6
 
-сделал только этот пункт:
-5. **Реализовать алгоритм перевода из инфиксной записи арифметического выражения в постфиксную.
+1. Реализовать простейшую хэш-функцию. На вход функции подается строка, на выходе сумма кодов символов.
+(я сделал чуть более сложную функцию - придумал сам)
+
+2. Переписать программу, реализующее двоичное дерево поиска.
+
+а) Добавить в него обход дерева различными способами;
+
+б) Реализовать поиск в двоичном дереве поиска;
+
+в) *Добавить в программу обработку командной строки с помощью которой можно указывать
+из какого файла считывать данные, каким образом обходить дерево.
+
+3. (не делал) *Разработать базу данных студентов из двух полей “Имя”, “Возраст”, “Табельный номер”
+в которой использовать все знания, полученные на уроках.
 
 */
 
@@ -21,184 +33,37 @@ void enterInt2(char *text, int *n, int *m);
 void enterString(char *text, char *s, int maxLen);
 static int steps;
 
-#define BUF_LEN 1000
-static char mem[BUF_LEN * 3 / 2];
-static int memIdx = 0;
 
-char* getSubstr(char *s, int len) {
-    char *ret = mem + memIdx;
-    for(int i=0; i<len; i++) {
-        mem[memIdx++] = s[i];
-    }
-    mem[memIdx++] = 0;
-    return ret;
-}
+void task1() {
+    // Реализовать простейшую хэш-функцию.
 
-char* getWord(char **s) {
-    int len = 0;
-    while(**s == ' ') (*s)++; // пропускаем пробелы
-    switch(**s) {
-    case '+': case '-': case '*': case '/': case '(': case ')':
-        len = 1;
-        break;
-
-    default:
-        while((*s)[len] != ' '
-              && (*s)[len] != '+'
-              && (*s)[len] != '-'
-              && (*s)[len] != '*'
-              && (*s)[len] != '/'
-              && (*s)[len] != '('
-              && (*s)[len] != ')'
-              && (*s)[len] != 0)
-            len++;
-    }
-
-    char *ret = getSubstr(*s, len);
-    (*s) += len;
-    return ret;
-}
-
-typedef struct {
-    char* buf[BUF_LEN];
-    int len, tmp;
-} Stack;
-
-void push(Stack *stack, char *s) {
-    stack->buf[stack->len++] = s;
-}
-
-char* pop(Stack *stack) {
-    if(stack->len == 0) return NULL;
-    return stack->buf[--stack->len];
-}
-
-char* last(Stack *stack) {
-    if(stack->len == 0) return NULL;
-    return stack->buf[stack->len - 1];
-}
-
-void action1(char *next, Stack *texas) {
-    push(texas, next);
-}
-
-void action2(Stack *calif, Stack *texas, int *stop, int *same) {
-    char *s = pop(texas);
-    if(s == NULL) {
-        printf("invalid expression\n");
-        *stop = 1;
-        return;
-    }
-    push(calif, s);
-    *same = 1;
-}
-
-void action3(Stack *texas, int *stop) {
-    char *s = pop(texas);
-    if(s == NULL) {
-        printf("invalid expression\n");
-        *stop = 1;
-        return;
-    }
-}
-
-void action4(int *stop) {
-    *stop = 1;
-}
-
-void action5(int *stop) {
-    printf("invalid expression\n");
-    *stop = 1;
-}
-
-void task5() {
-    char expr[1024];
-    enterString("enter expression", expr, BUF_LEN-1);
-
-    Stack calif, texas;
-    calif.len = 0;
-    texas.len = 0;
-    char *expr1 = expr;
-
-    char *next = NULL, *last1;
-    int stop = 0, same = 0;
-    while(1) {
+    char s[1000];
+    enterString("enter string", s, 999);
+    int hash = 0;
+    int tmp;
+    int i = 0;
+    unsigned char c;
+    while(s[i]) {
+        c = (unsigned char) s[i++];
+        hash <<= (c & 3);
+        hash += c;
+        tmp = hash & 0xff0000;
+        tmp >>= 16;
+        hash = (hash & 0xffff) ^ tmp;
         steps++;
-
-        if(!same)
-            next = getWord(&expr1);
-
-        stop = 0;
-        same = 0;
-        last1 = last(&texas);
-        if(last1 == NULL) last1 = "";
-
-        switch(*next) {
-        case 0:
-            switch(*last1) {
-            case 0:
-                action4(&stop); break;
-            case '(':
-                action5(&stop); break;
-            default:
-                action2(&calif, &texas, &stop, &same);
-            }
-            break;
-
-        case '+': case '-':
-            switch(*last1) {
-            case 0: case '(':
-                action1(next, &texas); break;
-            default:
-                action2(&calif, &texas, &stop, &same);
-            }
-            break;
-
-        case '*': case '/':
-            switch(*last1) {
-            case '*': case '/':
-                action2(&calif, &texas, &stop, &same); break;
-            default:
-                action1(next, &texas);
-            }
-            break;
-
-        case '(':
-            action1(next, &texas);
-            break;
-
-        case ')':
-            switch(*last1) {
-            case 0:
-                action5(&stop); break;
-            case '(':
-                action3(&texas, &stop); break;
-            default:
-                action2(&calif, &texas, &stop, &same);
-            }
-            break;
-
-        default:
-            push(&calif, next);
-        }
-
-        if(stop)
-            break;
     }
+    printf("hash: %d\n", hash);
+}
 
-    // выводим полученную формулу
-    printf("result:\n");
-    for(int i=0; i<calif.len; i++)
-        printf("%s ", calif.buf[i]);
-    printf("\n");
+void task2() {
 }
 
 
 typedef void (*TaskFunc)(void);
 
 int main() {
-    TaskFunc tasks[] = {task5};
-    char* taskNames[] = {"5"};
+    TaskFunc tasks[] = {task1, task2};
+    char* taskNames[] = {"1", "2"};
     int taskCount = (int)(sizeof(tasks)/sizeof(TaskFunc));
     int taskCount2 = (int)(sizeof(taskNames)/sizeof(char*));
 
